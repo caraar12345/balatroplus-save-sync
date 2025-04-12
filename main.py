@@ -1,5 +1,8 @@
+import json
 import plistlib
 from os import makedirs, path
+
+from slpp import slpp as lua
 
 import util
 
@@ -16,7 +19,9 @@ def main_menu():
     print("Welcome to Balatro+ Save Manager")
     print("1. From Arcade to Steam")
     print("2. From Steam to Arcade")
-    print("3. Exit")
+    print("3. Print Arcade Save")
+    print("4. Print Steam Save")
+    print("5. Exit")
     choice = input("Enter your choice: ")
     return choice
 
@@ -79,13 +84,16 @@ class ArcadeSave:
         if raw:
             return self.meta_jkr
         else:
-            return util.raw_inflate(self.meta_jkr)
+            return lua.decode(str(util.raw_inflate(self.meta_jkr))[8:-1])
 
-    def get_profile(self):
+    def get_profile(self, raw=True):
         """
         Get the profile.jkr file.
         """
-        return self.profile_jkr
+        if raw:
+            return self.meta_jkr
+        else:
+            return lua.decode(str(util.raw_inflate(self.profile_jkr))[8:-1])
 
     def set_meta(self, meta_jkr):
         """
@@ -146,17 +154,23 @@ class SteamSave:
             print(f"Error saving file: {e}")
             raise
 
-    def get_meta(self):
+    def get_meta(self, raw=True):
         """
         Get the meta.jkr file.
         """
-        return self.meta_jkr
+        if raw:
+            return self.meta_jkr
+        else:
+            return lua.decode(str(util.raw_inflate(self.meta_jkr))[8:-1])
 
-    def get_profile(self):
+    def get_profile(self, raw=True):
         """
         Get the profile.jkr file.
         """
-        return self.profile_jkr
+        if raw:
+            return self.meta_jkr
+        else:
+            return lua.decode(str(util.raw_inflate(self.profile_jkr))[8:-1])
 
     def set_meta(self, meta_jkr):
         """
@@ -196,6 +210,30 @@ def main():
             arcade_save.save()
             print("Save copied from Steam to Arcade.")
         elif choice == "3":
+            arcade_save = ArcadeSave()
+            arcade_save.load_save()
+            print(
+                json.dumps(
+                    {
+                        "meta": arcade_save.get_meta(raw=False),
+                        "profile": arcade_save.get_profile(raw=False),
+                    },
+                    indent=4,
+                )
+            )
+        elif choice == "4":
+            steam_save = SteamSave()
+            steam_save.load_save()
+            print(
+                json.dumps(
+                    {
+                        "meta": steam_save.get_meta(raw=False),
+                        "profile": steam_save.get_profile(raw=False),
+                    },
+                    indent=4,
+                )
+            )
+        elif choice == "5":
             break
         else:
             print("Invalid choice. Please try again.")
